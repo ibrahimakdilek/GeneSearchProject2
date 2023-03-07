@@ -1,0 +1,311 @@
+
+<!DOCTYPE html>
+<html>
+ <head>
+
+
+  <style>
+  html * {
+      font-family: Arial, Helvetica, sans-serif;
+    }
+  </style>
+	<meta http-equiv='Content-Type' content='text/html; charset=UTF-8' />
+	
+	<title>TTU | Gene Search Project</title>
+	
+	<link rel='stylesheet' type='text/css' href='static/style.css' />
+	
+	<!--[if IE]>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+	
+   
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css">
+
+
+
+<link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+
+<script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/xy.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+
+
+</head>
+
+<body>
+  
+
+	<div class="container">
+    <div class="searchBar">
+
+      <form method="post">
+        {% csrf_token %}
+        <input type="text" name="query" placeholder="Write the Gene Symbol, then press Enter or Return" id="query">
+      </form>
+
+
+    </div>
+  
+    <div class="holder">
+
+
+      {%if listData|length > 0%}
+      
+      <!--<h1>Result(s) of this search generated in <strong></strong> seconds </h1>-->
+
+      {%for data in listData%}      
+      
+      
+
+        <h2>
+          Your Search Result for:  <strong>{{data.ApprovedSymbol}}</strong>
+        </h2>
+        <p>
+          Approved Symbol of the Gene: <strong>{{data.ApprovedSymbol}}</strong>
+        </p>
+        <p>
+          Previous Symbols of the Gene: <strong>{{data.PreviousSymbols}}</strong>
+        </p>
+        <p>
+          Synonyms: <strong>{{data.Synonyms}}</strong>
+        </p>
+        <p>
+          Date for the Latest Name Change: <strong>{{data.DateNameChanged}}</strong>
+        </p>
+
+        <details>
+          <summary>Citation Graph for <strong>{{data.ApprovedSymbol}}</strong></summary>
+
+          <p>
+            <div id="chartdiv" style="width:100%; height: 500px;"></div>
+          </p>
+        </details>
+
+      
+        <details>
+          <summary>Links for the Articles of <strong>{{data.ApprovedSymbol}}</strong></summary>
+
+          <p>
+            Coming Soon...
+          </p>
+        </details>
+        
+        <ul class="dataHolder">
+          {%for item in data.Details%}
+          
+          <li>
+            <br>
+          </li>
+          {%endfor%}
+        </ul>
+      {%endfor%}
+
+      
+      {%else%}
+
+
+    <div class=".container h1"> 
+      
+    <h1>Please type an appropriate Gene Symbol to Search Bar</h1>
+
+    </div>
+      {%endif%}
+    </div>
+  </div>
+  
+  
+  <script>
+
+var acc = document.getElementsByClassName("accordion");
+var i;
+
+for (i = 0; i < acc.length; i++) {
+  acc[i].addEventListener("click", function() {
+    /* Toggle between adding and removing the "active" class,
+    to highlight the button that controls the panel */
+    this.classList.toggle("active");
+
+    /* Toggle between hiding and showing the active panel */
+    var panel = this.nextElementSibling;
+    if (panel.style.display === "block") {
+      panel.style.display = "none";
+    } else {
+      panel.style.display = "block";
+    }
+  });
+}
+
+</script>
+
+<script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+
+<script>
+  $(document).ready(function(){
+    $(`div[aria-label="Zoom Out"]`).css({'display':'none'});
+});
+</script>
+
+<script>
+
+
+  $( function() {
+    
+    $( "#query" ).autocomplete({
+      source: ["Rgs","rGs5","rgS9"]
+    });
+  } );
+  </script>
+
+  <script>
+
+var res = JSON.parse("{{listData.0.GraphData|safe}}".replaceAll("\'","\""));
+  am5.ready(function() {
+    
+    // Create root element
+    // https://www.amcharts.com/docs/v5/getting-started/#Root_element
+    var root = am5.Root.new("chartdiv");
+    
+    // Set themes
+    // https://www.amcharts.com/docs/v5/concepts/themes/
+    root.setThemes([
+      am5themes_Animated.new(root)
+    ]);
+    
+    
+    // Create chart
+    // https://www.amcharts.com/docs/v5/charts/xy-chart/
+    var chart = root.container.children.push(am5xy.XYChart.new(root, {
+      panX: true,
+      panY: true,
+      wheelX: "panX",
+      wheelY: "zoomX",
+      pinchZoomX:true
+    }));
+    
+    chart.get("colors").set("step", 3);
+
+
+
+
+    // Add cursor
+    // https://www.amcharts.com/docs/v5/charts/xy-chart/cursor/
+    var cursor = chart.set("cursor", am5xy.XYCursor.new(root, {}));
+    cursor.lineY.set("visible", false);
+
+    
+    
+    
+    // Create axes
+    // https://www.amcharts.com/docs/v5/charts/xy-chart/axes/
+    var xAxis = chart.xAxes.push(am5xy.DateAxis.new(root, {
+      maxDeviation: 0.3,
+      baseInterval: {
+        timeUnit: "month",
+        count: 1
+      },
+      renderer: am5xy.AxisRendererX.new(root, {}),
+      tooltip: am5.Tooltip.new(root, {})
+    }));
+    
+    var yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
+      maxDeviation: 0.3,
+      renderer: am5xy.AxisRendererY.new(root, {})
+    }));
+    
+    
+    // Set date fields
+    // https://www.amcharts.com/docs/v5/concepts/data/#Parsing_dates
+    root.dateFormatter.setAll({
+      dateFormat: "yyyy-MM",
+      dateFields: ["valueX"]
+    });
+    var initDate = new Date(1970, 1, 1);
+    var data = [];
+    for(i = 1; i<res[0].length;i++){
+      var newObj = {
+        date: initDate.getTime(),
+      };
+      for (j = 0; j<res.length;j++){
+        newObj[res[j][0]]=res[j][i];
+      }
+      data.push(newObj);
+      am5.time.add(initDate,"month",1);
+    }
+    series = [];
+    for (i = 0; i<res.length; i++){
+      var serie = chart.series.push(am5xy.LineSeries.new(root, {
+        name: res[i][0],
+        xAxis: xAxis,
+        yAxis: yAxis,
+        valueYField: res[i][0],
+        valueXField: "date",
+        tooltip: am5.Tooltip.new(root, {
+          labelText: "{name}: {valueY}\non {valueX}"
+        })
+      }));
+      
+      serie.strokes.template.setAll({
+        strokeWidth: 2
+      });
+      serie.data.setAll(data);
+      serie.appear(1000);
+      series.push(serie);
+    }
+    
+    // Add scrollbar
+    // https://www.amcharts.com/docs/v5/charts/xy-chart/scrollbars/
+    var scrollbar = chart.set("scrollbarX", am5xy.XYChartScrollbar.new(root, {
+      orientation: "horizontal",
+      height: 60
+    }));
+    
+    var sbDateAxis = scrollbar.chart.xAxes.push(am5xy.DateAxis.new(root, {
+      baseInterval: {
+        timeUnit: "day",
+        count: 1
+      },
+      renderer: am5xy.AxisRendererX.new(root, {})
+    }));
+    
+    var sbValueAxis = scrollbar.chart.yAxes.push(
+      am5xy.ValueAxis.new(root, {
+        renderer: am5xy.AxisRendererY.new(root, {})
+      })
+    );
+    
+    var sbSeries = scrollbar.chart.series.push(am5xy.LineSeries.new(root, {
+      valueYField: res[0][0],
+      valueXField: "date",
+      xAxis: sbDateAxis,
+      yAxis: sbValueAxis
+    }));
+    
+    sbSeries.data.setAll(data);
+
+    console.log(series);
+
+    var legend = chart.children.push(am5.Legend.new(root, {}));
+    legend.data.setAll(chart.series.values);
+
+    //var legend = chart.children.push(am5.Legend.new(root, {}));
+    //legend.data.setAll(series.dataItems);
+
+
+    // Make stuff animate on load
+    // https://www.amcharts.com/docs/v5/concepts/animations/
+    chart.appear(1000, 100);
+    
+    }); // end am5.ready()
+  
+  </script>
+
+
+
+
+
+
+</body>
+</html>
