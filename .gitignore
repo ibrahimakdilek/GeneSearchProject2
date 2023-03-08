@@ -2,4 +2,5 @@ GeneSearch/GeneStudy.db
 GeneSearch/GraphDates.db
 */__pycache__/
 GeneSearch/GeneCard.db
+virtualenvironment/*
 
