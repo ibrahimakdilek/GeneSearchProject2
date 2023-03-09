@@ -11,7 +11,15 @@ import sqlite3
 
 
 
-
+def get_approved_symbols():
+    con = sqlite3.connect("GeneCard.db")
+    con.row_factory = sqlite3.Row 
+    cur = con.cursor()
+    result = []
+    for row in cur.execute(f'SELECT ApprovedSymbol FROM GeneStudy'):
+        row=list(row)
+        result.append(row[0])
+    return result
 
 
 
@@ -24,7 +32,7 @@ def index(request):
 
         data=list(dataapprovedsymbol)
 
-        print(data)
+
 
     context= {
         'listData':[]
@@ -33,11 +41,13 @@ def index(request):
 
     for res in data: 
         graphdata = []
+    
 
         if res.linked_genes:
 
             citationqueries=res.linked_genes.split('|')
-            print(citationqueries)
+            citationqueries.append(request.POST['query'])
+            
             citations=[]
             con = sqlite3.connect("GraphDates.db")
             con.row_factory = sqlite3.Row 
@@ -47,7 +57,8 @@ def index(request):
                 for row in cur.execute(f'SELECT * FROM GraphDates WHERE "Date" = "{query}"'):
                     row=list(row)
                     graphdata.append(row)
-            print(graphdata)
+        else:
+            context['resultFound'] = True
 
         context['listData'].append({
             'ApprovedSymbol':res.approved_symbol,
@@ -56,10 +67,9 @@ def index(request):
             'Synonyms':res.synonyms,      
             'GraphData':graphdata,
         })
-   
+        
     template=loader.get_template('index.html')
     return HttpResponse(template.render(context, request,))
-
 
 
 
