@@ -1,4 +1,4 @@
-
+{% load static %}
 <!DOCTYPE html>
 <html>
  <head>
@@ -42,7 +42,10 @@
 
       <form method="post">
         {% csrf_token %}
-        <input type="text" name="query" placeholder="Write the Gene Symbol, then press Enter or Return" id="query">
+        <input type="text" name="query" placeholder="Write the Gene Symbol, then press Enter or Return" id="query" onkeyup="searchAutocomplete(this.value)"
+        >
+        <div id="autocomplete-results"></div>
+
       </form>
 
 
@@ -76,19 +79,20 @@
         </p>
 
         <details>
-          <summary>Citation Graph for <strong>{{data.ApprovedSymbol}}</strong></summary>
+          <summary>Click to see Citation Graph for <strong>{{data.ApprovedSymbol}} and Linked Genes</strong></summary>
 
           <p>
-            <div id="chartdiv" style="width:100%; height: 500px;"></div>
+            <div id="chartdiv{{data.ApprovedSymbol}}" style="width:100%; height: 500px;"></div>
           </p>
         </details>
 
       
         <details>
-          <summary>Links for the Articles of <strong>{{data.ApprovedSymbol}}</strong></summary>
+          <summary>Click to see Links for the Articles of <strong>{{data.ApprovedSymbol}}</strong></summary>
 
           <p>
-            <iframe src="https://www.ncbi.nlm.nih.gov/pmc/?term={{data.ApprovedSymbol}}" height=400 width=1200 title="">
+            
+            <iframe  allowtransparency="true" style="background: #FFFFFF;" src="{% static data.htmlfiles %}" height=400 width=1200 title="">
             </iframe>
           </p>
         </details>
@@ -149,51 +153,67 @@ for (i = 0; i < acc.length; i++) {
 });
 </script>
 
-<script>
 
+  <script>
+    function searchAutocomplete(query) {
 
-  $( function() {
+      fetch('/search-autocomplete/?query=' + query)
+        .then(response => response.json())
+        .then(data => {
+          const autocompleteResultsDiv = document.getElementById('autocomplete-results');
+          autocompleteResultsDiv.innerHTML = '';
     
-    $( "#query" ).autocomplete({
-      source: ["Rgs","rGs5","rgS9"]
-    });
-  } );
+          data.forEach(result => {
+            const resultElement = document.createElement('p');
+            resultElement.textContent = result;
+            autocompleteResultsDiv.appendChild(resultElement);
+          
+          });
+        });
+      }
   </script>
 
   <script>
 
-var res = JSON.parse("{{listData.0.GraphData|safe}}".replaceAll("\'","\""));
+var charts={};
+var datas={};
+var series={};
+var roots={};
+
+{%for data in listData%}   
+
+var res = JSON.parse("{{data.GraphData|safe}}".replaceAll("\'","\""));
   am5.ready(function() {
     
     // Create root element
     // https://www.amcharts.com/docs/v5/getting-started/#Root_element
-    var root = am5.Root.new("chartdiv");
+    roots['{{data.ApprovedSymbol}}'] = am5.Root.new("chartdiv{{data.ApprovedSymbol}}");
     
     // Set themes
     // https://www.amcharts.com/docs/v5/concepts/themes/
-    root.setThemes([
-      am5themes_Animated.new(root)
+    roots['{{data.ApprovedSymbol}}'].setThemes([
+      am5themes_Animated.new(roots['{{data.ApprovedSymbol}}'])
     ]);
     
     
     // Create chart
     // https://www.amcharts.com/docs/v5/charts/xy-chart/
-    var chart = root.container.children.push(am5xy.XYChart.new(root, {
+    charts['{{data.ApprovedSymbol}}'] = roots['{{data.ApprovedSymbol}}'].container.children.push(am5xy.XYChart.new(roots['{{data.ApprovedSymbol}}'], {
       panX: true,
       panY: true,
       wheelX: "panX",
       wheelY: "zoomX",
       pinchZoomX:true
     }));
-    
-    chart.get("colors").set("step", 3);
+
+    charts['{{data.ApprovedSymbol}}'].get("colors").set("step", 3);
 
 
 
 
     // Add cursor
     // https://www.amcharts.com/docs/v5/charts/xy-chart/cursor/
-    var cursor = chart.set("cursor", am5xy.XYCursor.new(root, {}));
+    var cursor = charts['{{data.ApprovedSymbol}}'].set("cursor", am5xy.XYCursor.new(roots['{{data.ApprovedSymbol}}'], {}));
     cursor.lineY.set("visible", false);
 
     
@@ -201,30 +221,30 @@ var res = JSON.parse("{{listData.0.GraphData|safe}}".replaceAll("\'","\""));
     
     // Create axes
     // https://www.amcharts.com/docs/v5/charts/xy-chart/axes/
-    var xAxis = chart.xAxes.push(am5xy.DateAxis.new(root, {
+    var xAxis = charts['{{data.ApprovedSymbol}}'].xAxes.push(am5xy.DateAxis.new(roots['{{data.ApprovedSymbol}}'], {
       maxDeviation: 0.3,
       baseInterval: {
         timeUnit: "month",
         count: 1
       },
-      renderer: am5xy.AxisRendererX.new(root, {}),
-      tooltip: am5.Tooltip.new(root, {})
+      renderer: am5xy.AxisRendererX.new(roots['{{data.ApprovedSymbol}}'], {}),
+      tooltip: am5.Tooltip.new(roots['{{data.ApprovedSymbol}}'], {})
     }));
     
-    var yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
+    var yAxis = charts['{{data.ApprovedSymbol}}'].yAxes.push(am5xy.ValueAxis.new(roots['{{data.ApprovedSymbol}}'], {
       maxDeviation: 0.3,
-      renderer: am5xy.AxisRendererY.new(root, {})
+      renderer: am5xy.AxisRendererY.new(roots['{{data.ApprovedSymbol}}'], {})
     }));
     
     
     // Set date fields
     // https://www.amcharts.com/docs/v5/concepts/data/#Parsing_dates
-    root.dateFormatter.setAll({
+    roots['{{data.ApprovedSymbol}}'].dateFormatter.setAll({
       dateFormat: "yyyy-MM",
       dateFields: ["valueX"]
     });
     var initDate = new Date(1970, 1, 1);
-    var data = [];
+    datas['{{data.ApprovedSymbol}}'] = [];
     for(i = 1; i<res[0].length;i++){
       var newObj = {
         date: initDate.getTime(),
@@ -232,18 +252,18 @@ var res = JSON.parse("{{listData.0.GraphData|safe}}".replaceAll("\'","\""));
       for (j = 0; j<res.length;j++){
         newObj[res[j][0]]=res[j][i];
       }
-      data.push(newObj);
+      datas['{{data.ApprovedSymbol}}'].push(newObj);
       am5.time.add(initDate,"month",1);
     }
-    series = [];
+    series['{{data.ApprovedSymbol}}'] = [];
     for (i = 0; i<res.length; i++){
-      var serie = chart.series.push(am5xy.LineSeries.new(root, {
+      var serie = charts['{{data.ApprovedSymbol}}'].series.push(am5xy.LineSeries.new(roots['{{data.ApprovedSymbol}}'], {
         name: res[i][0],
         xAxis: xAxis,
         yAxis: yAxis,
         valueYField: res[i][0],
         valueXField: "date",
-        tooltip: am5.Tooltip.new(root, {
+        tooltip: am5.Tooltip.new(roots['{{data.ApprovedSymbol}}'], {
           labelText: "{name}: {valueY}\non {valueX}"
         })
       }));
@@ -251,45 +271,44 @@ var res = JSON.parse("{{listData.0.GraphData|safe}}".replaceAll("\'","\""));
       serie.strokes.template.setAll({
         strokeWidth: 2
       });
-      serie.data.setAll(data);
+      serie.data.setAll(datas['{{data.ApprovedSymbol}}']);
       serie.appear(1000);
-      series.push(serie);
+      series['{{data.ApprovedSymbol}}'].push(serie);
     }
     
     // Add scrollbar
     // https://www.amcharts.com/docs/v5/charts/xy-chart/scrollbars/
-    var scrollbar = chart.set("scrollbarX", am5xy.XYChartScrollbar.new(root, {
+    var scrollbar = charts['{{data.ApprovedSymbol}}'].set("scrollbarX", am5xy.XYChartScrollbar.new(roots['{{data.ApprovedSymbol}}'], {
       orientation: "horizontal",
       height: 60
     }));
     
-    var sbDateAxis = scrollbar.chart.xAxes.push(am5xy.DateAxis.new(root, {
+    var sbDateAxis = scrollbar.chart.xAxes.push(am5xy.DateAxis.new(roots['{{data.ApprovedSymbol}}'], {
       baseInterval: {
         timeUnit: "day",
         count: 1
       },
-      renderer: am5xy.AxisRendererX.new(root, {})
+      renderer: am5xy.AxisRendererX.new(roots['{{data.ApprovedSymbol}}'], {})
     }));
     
     var sbValueAxis = scrollbar.chart.yAxes.push(
-      am5xy.ValueAxis.new(root, {
-        renderer: am5xy.AxisRendererY.new(root, {})
+      am5xy.ValueAxis.new(roots['{{data.ApprovedSymbol}}'], {
+        renderer: am5xy.AxisRendererY.new(roots['{{data.ApprovedSymbol}}'], {})
       })
     );
     
-    var sbSeries = scrollbar.chart.series.push(am5xy.LineSeries.new(root, {
+    var sbSeries = scrollbar.chart.series.push(am5xy.LineSeries.new(roots['{{data.ApprovedSymbol}}'], {
       valueYField: res[0][0],
       valueXField: "date",
       xAxis: sbDateAxis,
       yAxis: sbValueAxis
     }));
     
-    sbSeries.data.setAll(data);
+    sbSeries.data.setAll(datas['{{data.ApprovedSymbol}}']);
 
-    console.log(series);
 
-    var legend = chart.children.push(am5.Legend.new(root, {}));
-    legend.data.setAll(chart.series.values);
+    var legend = charts['{{data.ApprovedSymbol}}'].children.push(am5.Legend.new(roots['{{data.ApprovedSymbol}}'], {}));
+    legend.data.setAll(charts['{{data.ApprovedSymbol}}'].series.values);
 
     //var legend = chart.children.push(am5.Legend.new(root, {}));
     //legend.data.setAll(series.dataItems);
@@ -297,10 +316,12 @@ var res = JSON.parse("{{listData.0.GraphData|safe}}".replaceAll("\'","\""));
 
     // Make stuff animate on load
     // https://www.amcharts.com/docs/v5/concepts/animations/
-    chart.appear(1000, 100);
+    charts['{{data.ApprovedSymbol}}'].appear(1000, 100);
     
     }); // end am5.ready()
-  
+
+
+  {%endfor%}
   </script>
 
 

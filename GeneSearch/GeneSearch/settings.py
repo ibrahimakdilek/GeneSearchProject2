@@ -82,7 +82,7 @@ DATABASES = {
 
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'GeneStudy.db',
+        'NAME': BASE_DIR / 'GeneCard.db',
     }
 }
 
