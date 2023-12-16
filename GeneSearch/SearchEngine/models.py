@@ -10,15 +10,14 @@ from django.db import models
 
 
 class GeneList(models.Model):
-    approved_symbol = models.TextField(db_column='ApprovedSymbol', blank=True, null=False, primary_key=True)  # Field name made lowercase.
-    date_name_changed = models.TextField(db_column='DateNameChanged', blank=True, null=True)  # Field name made lowercase.
-    previous_symbol = models.TextField(db_column='PreviousSymbols', blank=True, null=True)  # Field name made lowercase.
-    synonyms = models.TextField(db_column='Synonyms', blank=True, null=True)  # Field name made lowercase.
+    approved_symbol = models.TextField(db_column='approved_symbol', blank=True, null=False, primary_key=True)  # Field name made lowercase.
+    previous_symbol = models.TextField(db_column='previous_symbol', blank=True, null=True)  # Field name made lowercase.
+    synonyms = models.TextField(db_column='synonyms', blank=True, null=True)  # Field name made lowercase.
     
 
     class Meta:
         managed = False
-        db_table = 'GeneStudy'
+        db_table = 'gene_fin'
 
     
 

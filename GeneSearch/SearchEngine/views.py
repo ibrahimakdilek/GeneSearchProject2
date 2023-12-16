@@ -45,8 +45,11 @@ def index(request):
         
         if request.method=='POST':
 
-            dataapprovedsymbol=GeneList.objects.filter(approved_symbol__iexact=gene)
-            data=data+list(dataapprovedsymbol)
+            dataapprovedsymbol=GeneList.objects.filter(synonyms__startswith=f'{gene}|')
+            for row in list(dataapprovedsymbol):
+                row.query=gene
+                data.append(row)
+               
             
 
 
@@ -77,8 +80,8 @@ def index(request):
 
         context['listData'].append({
             'ApprovedSymbol':(res.approved_symbol+' (Discontunied)'if res.approved_symbol.endswith('~') else res.approved_symbol),
+            'query':res.query,
             'htmlfiles':'html_files/' + res.approved_symbol.split('~')[0] + '.html',
-            'DateNameChanged':res.date_name_changed,
             'PreviousSymbols':res.previous_symbol,
             'Synonyms':res.synonyms,      
             'GraphData':graphdata,
@@ -86,8 +89,6 @@ def index(request):
         
     template=loader.get_template('index.html')
     return HttpResponse(template.render(context, request,))
-
-
 
 
 
